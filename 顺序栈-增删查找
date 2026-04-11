@@ -1,0 +1,165 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+#define MAX_SIZE 100  // 栈的最大容量
+
+// 顺序栈结构体
+typedef struct {
+    int data[MAX_SIZE];  // 存放栈元素的数组
+    int top;             // 栈顶指针，-1表示空栈
+} SeqStack;
+
+// 1. 初始化栈
+void InitStack(SeqStack *s) {
+    s->top = -1;
+    printf("初始化栈完成，栈为空
+");
+    PrintStack(s);
+           }
+
+// 2. 判断栈是否为空
+bool IsEmpty(SeqStack *s) {
+    return s->top == -1;
+
+}
+
+// 3. 判断栈是否已满
+bool IsFull(SeqStack *s) {
+    return s->top == MAX_SIZE - 1;
+}
+
+// 4. 入栈
+bool Push(SeqStack *s, int value) {
+    if (IsFull(s)) {
+        printf("栈已满，无法入栈！
+");
+        return false;
+               }
+    s->top++;
+    s->data[s->top] = value;
+    printf("入栈元素：%d
+", value);
+    PrintStack(s);
+    return true;
+           }
+
+// 5. 出栈
+bool Pop(SeqStack *s, int *value) {
+    if (IsEmpty(s)) {
+        printf("栈为空，无法出栈！
+");
+        return false;
+               }
+    *value = s->data[s->top];
+    s->top--;
+    printf("出栈元素：%d
+", *value);
+    PrintStack(s);
+    return true;
+           }
+
+// 6. 取栈顶元素（不出栈）
+bool GetTop(SeqStack *s, int *value) {
+    if (IsEmpty(s)) {
+        printf("栈为空，无栈顶元素！
+");
+        return false;
+               }
+    *value = s->data[s->top];
+    printf("栈顶元素：%d
+", *value);
+    PrintStack(s);
+    return true;
+           }
+
+// 7. 打印栈中所有元素（从栈底到栈顶）
+void PrintStack(SeqStack *s) {
+    if (IsEmpty(s)) {
+        printf("当前栈：空
+");
+        return;
+               }
+    printf("当前栈（底 -> 顶）：");
+    for (int i = 0; i <= s->top; i++) {
+        printf("%d ", s->data[i]);
+    }
+    printf("
+");
+    printf("栈顶指针位置：%d
+", s->top);
+    printf("------------------------
+");
+           }
+
+// 测试函数
+int main() {
+    SeqStack stack;
+    int value;
+    
+    printf("========== 顺序栈操作测试 ==========
+
+");
+    
+    // 测试初始化
+    InitStack(&stack);
+    
+    // 测试入栈
+    printf("
+--- 测试入栈 ---
+");
+    Push(&stack, 10);
+    Push(&stack, 20);
+    Push(&stack, 30);
+    Push(&stack, 40);
+    
+    // 测试取栈顶元素
+    printf("
+--- 测试取栈顶元素 ---
+");
+    GetTop(&stack, &value);
+    
+    // 测试出栈
+    printf("
+--- 测试出栈 ---
+");
+    Pop(&stack, &value);
+    Pop(&stack, &value);
+    
+    // 再次取栈顶元素
+    printf("
+--- 再次取栈顶元素 ---
+");
+    GetTop(&stack, &value);
+    
+    // 继续出栈直到空
+    printf("
+--- 继续出栈 ---
+");
+    Pop(&stack, &value);
+    Pop(&stack, &value);
+    
+    // 测试空栈时出栈
+    printf("
+--- 测试空栈出栈 ---
+");
+    Pop(&stack, &value);
+    
+    // 测试空栈取栈顶
+    printf("
+--- 测试空栈取栈顶 ---
+");
+    GetTop(&stack, &value);
+    
+    // 再次入栈验证
+    printf("
+--- 再次入栈验证 ---
+");
+    Push(&stack, 100);
+    Push(&stack, 200);
+    
+    printf("
+========== 测试完成 ==========
+");
+    
+    return 0;
+           }
