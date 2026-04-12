@@ -1,0 +1,147 @@
+#include<stdlib.h>
+#include<stdio.h>
+#define ERROR -1
+typedef struct Node{
+int data;
+struct Node*next;
+}Node;
+//获取链表长度、
+int getLength(Node* head){
+int length=0;
+Node *p=head->next;
+while (p!=NULL){
+length++;
+p=p->next;
+}
+return length;
+}
+//创建链表
+Node *createList(){
+Node *head=(Node*)malloc(sizeof(Node));
+if(head==NULL)return NULL;
+head->next=NULL;
+Node* tail=head;
+int num;
+printf("请输入节点值(-1结束):\n");
+while(1){
+if(scanf("%d",&num)!=1){
+printf("输入非法，请重新输入：");
+while(getchar()!='\n');
+continue;
+}
+if(num==-1)break;
+Node *newNode=(Node*)malloc(sizeof(Node));
+if(newNode==NULL){
+Node *p=head->next;
+while(p!=NULL){
+Node *temp=p;
+p=p->next;
+free(temp);
+}
+free(head);
+return NULL;
+}
+newNode->data=num;
+newNode->next=NULL;
+tail->next=newNode;
+tail=newNode;
+}
+return head;
+}
+//打印链表
+void printList(Node *head){
+if(head==NULL||head->next==NULL){
+printf("链表为空\n");
+return;
+}
+Node *p=head->next;
+printf("链表内容:");
+while(p!=NULL){
+printf("%d ",p->data);
+p=p->next;
+}
+printf("\n");
+}
+//删除指定位置节点
+int deleteNode(Node *head,int n){
+if(head==NULL||head->next==NULL)return ERROR;
+int length=getLength(head);
+if(n<1||n>length)return ERROR;
+Node *p=head;
+for(int i=0;i<n-1;i++){
+p=p->next;
+}
+Node *delNode=p->next;
+p->next=delNode->next;
+free(delNode);
+return 0;
+}
+//插入节点到指定位置
+int insertNode(Node *head,int n,int data){
+if(head==NULL)return ERROR;
+int length=getLength(head);
+if(n<1||n>length+1)return ERROR;
+Node*p=head;
+for(int i=0;i<n-1;i++){
+p=p->next;
+}
+Node *newNode=(Node*)malloc(sizeof(Node));
+if(newNode==NULL)return ERROR;
+newNode->data=data;
+newNode->next=p->next;
+p->next=newNode;
+return 0;
+}
+//获取指定节点
+int getNode(Node *head,int n,int *outData){
+if(head==NULL||head->next==NULL)return ERROR;
+int length=getLength(head);
+if(n<1||n>length)return ERROR;
+Node *p=head->next;
+for(int i=1;i<n;i++){
+p=p->next;
+}
+*outData=p->data;
+return 0;
+}
+//主函数调用
+int main(){
+Node *head=createList();
+if(head==NULL){
+printf("创建链表失败\n");
+return 1;
+}
+printf("初始链表：");
+printList(head);
+//插入操作示例
+if(insertNode(head,2,99)==0){
+printf("插入后链表:");
+printList(head);
+}else{
+printf("插入失败\n");
+}
+//获取元素示例
+int node;
+if(getNode(head,2,&node)==0){
+printf("第二个元素是：%d\n",node);
+}
+else{
+printf("获取元素失败\n");
+}
+//删除操作示例
+int delPos=2;
+if(deleteNode(head,delPos)==0){
+printf("删除第%d个节点后链表：",delPos);
+printList(head);
+}else{
+printf("删除第%d个节点失败\n",delPos);
+}
+Node *p=head->next;
+while(p!=NULL){
+Node *temp=p;
+p=p->next;
+free(temp);
+}
+free(head);
+return 0;
+}
