@@ -1,0 +1,173 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_PARK 2    // 停车场容量
+#define MAX_WAIT 5    // 候车场容量
+#define PRICE 0.1     // 每分钟收费金额
+
+// --- 1. 数据结构定义 ---
+
+typedef struct {
+    int id;
+    int arrivalTime;
+} Car;
+
+// 栈：停车场和让路区
+typedef struct {
+    Car data[MAX_PARK];
+    int top;
+} Stack;
+
+// 循环队列：提高空间利用率，增加判满功能
+typedef struct {
+    int data[MAX_WAIT];
+    int front;
+    int rear;
+} Queue;
+
+// --- 2. 基础操作函数 ---
+
+void InitStack(Stack *s) { s->top = -1; }
+int IsStackFull(Stack *s) { return s->top == MAX_PARK - 1; }
+int IsStackEmpty(Stack *s) { return s->top == -1; }
+void Push(Stack *s, Car c) { s->data[++(s->top)] = c; }
+Car Pop(Stack *s) { return s->data[(s->top)--]; }
+
+void InitQueue(Queue *q) { q->front = q->rear = 0; }
+int IsQueueEmpty(Queue *q) { return q->front == q->rear; }
+// 循环队列判满逻辑：(rear + 1) % MAX == front
+int IsQueueFull(Queue *q) { return (q->rear + 1) % MAX_WAIT == q->front; }
+void EnQueue(Queue *q, int id) {
+    q->data[q->rear] = id;
+    q->rear = (q->rear + 1) % MAX_WAIT;
+}
+int DeQueue(Queue *q) {
+    int id = q->data[q->front];
+    q->front = (q->front + 1) % MAX_WAIT;
+    return id;
+}
+
+// --- 3. 增强功能：显示状态 ---
+
+void DisplayStatus(Stack *park, Queue *wait) {
+    printf("\n--- 当前状态 --- \n");
+    printf("停车场(%d/%d): ", park->top + 1, MAX_PARK);
+    if (IsStackEmpty(park)) printf("空");
+    for (int i = 0; i <= park->top; i++) printf("[%d号车] ", park->data[i].id);
+    
+    printf("\n等候区: ");
+    if (IsQueueEmpty(wait)) printf("无");
+    int i = wait->front;
+    while (i != wait->rear) {
+        printf("%d <- ", wait->data[i]);
+        i = (i + 1) % MAX_WAIT;
+    }
+    printf("\n----------------\n");
+}
+
+// --- 4. 核心业务逻辑 ---
+
+void Arrival(Stack *park, Queue *wait, int id, int time) {
+    if (id <= 0) {
+        printf("错误：无效的车辆ID。\n");
+        return;
+    }
+    if (!IsStackFull(park)) {
+        Car c = {id, time};
+        Push(park, c);
+        printf("车辆 %d 进入停车场，位置：%d\n", id, park->top + 1);
+    } else if (!IsQueueFull(wait)) {
+        EnQueue(wait, id);
+        printf("停车场已满，车辆 %d 进入候车道排队\n", id);
+    } else {
+        printf("停车场和候车道均已满，车辆 %d 无法进入\n", id);
+    }
+}
+
+void Departure(Stack *park, Stack *temp, Queue *wait, int id, int time) {
+    int found = 0;
+    Car targetCar;
+
+    // 1. 寻找车辆
+    while (!IsStackEmpty(park)) {
+        Car c = Pop(park);
+        if (c.id == id) {
+            targetCar = c;
+            found = 1;
+            break;
+        }
+        Push(temp, c);
+    }
+
+    if (found) {
+        // 验证时间有效性（解决负数时长问题）
+        if (time < targetCar.arrivalTime) {
+            printf("错误：离开时间(%d)早于入场时间(%d)！\n", time, targetCar.arrivalTime);
+            Push(park, targetCar); // 还原车辆
+        } else {
+            int duration = time - targetCar.arrivalTime;
+            printf("车辆 %d 离开，停留 %d 分钟，费用 %.2f 元\n", id, duration, duration * PRICE);
+            
+            // 2. 候车道车辆进入（入场时间修正为当前时间）
+            if (!IsQueueEmpty(wait)) {
+                int nextId = DeQueue(wait);
+                Car nextCar = {nextId, time}; 
+                Push(park, nextCar);
+                printf("等候区车辆 %d 进入停车场\n", nextId);
+            }
+        }
+    } else {
+        printf("错误：停车场内未找到车辆 %d\n", id);
+    }
+
+    // 3. 恢复现场：将临时栈的车移回
+    while (!IsStackEmpty(temp)) {
+        Push(park, Pop(temp));
+    }
+}
+
+// --- 5. 主函数 ---
+
+int main() {
+    Stack park, temp;
+    Queue wait;
+    InitStack(&park);
+    InitStack(&temp);
+    InitQueue(&wait);
+
+    char status;
+    int id, time;
+    int lastTime = -1; // 用于校验时间单调递增
+
+    printf("指令说明: A-到达, D-离开, E-结束\n格式: [指令] [ID] [时间]\n");
+    
+    while (1) {
+        printf("\n请输入指令: ");
+        if (scanf(" %c", &status) == 0 || status == 'E') break;
+        if (scanf("%d %d", &id, &time) != 2) {
+            printf("输入格式错误，请重新输入。\n");
+            fflush(stdin); // 清空输入缓冲区
+            continue;
+        }
+
+        // 校验时间连续性
+        if (time < lastTime) {
+            printf("错误：输入时间(%d)不能早于上一次操作时间(%d)！\n", time, lastTime);
+            continue;
+        }
+        lastTime = time;
+
+        if (status == 'A') {
+            Arrival(&park, &wait, id, time);
+        } else if (status == 'D') {
+            Departure(&park, &temp, &wait, id, time);
+        } else {
+            printf("无效指令！\n");
+        }
+        
+        DisplayStatus(&park, &wait); // 每次操作后显示状态
+    }
+
+    printf("系统已安全退出。\n");
+    return 0;
+}
