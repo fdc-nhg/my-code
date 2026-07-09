@@ -1,0 +1,62 @@
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+void getNext(char *p,int *next){
+  int m=strlen(p);
+  next[0]=0;
+  int j=0;
+    for (int i = 1; i < m; i++) {
+        // 当字符不匹配时，通过 next 数组回退 j
+        while (j > 0 && p[i] != p[j]) {
+            j = next[j - 1];
+        }
+        // 如果当前字符匹配，最长相等前后缀长度 +1
+        if (p[i] == p[j]) {
+            j++;
+        }
+        next[i] = j;
+    }
+}
+int KMP(char* s, char* p) {
+    int n = strlen(s);
+    int m = strlen(p);
+    if (m == 0) return 0;
+
+    int* next = (int*)malloc(sizeof(int) * m);
+    getNext(p, next); // 1. 预处理得到 next 数组
+
+    int j = 0; // 模式串的指针
+    for (int i = 0; i < n; i++) { // i 是主串指针，不回退
+        // 2. 当不匹配时，模式串指针根据 next 数组跳跃
+        while (j > 0 && s[i] != p[j]) {
+            j = next[j - 1];
+        }
+        // 3. 匹配则继续前进
+        if (s[i] == p[j]) {
+            j++;
+        }
+        // 4. 找到完整匹配
+        if (j == m) {
+            free(next); // 释放内存
+            return i - m + 1;
+        }
+    }
+
+    free(next);
+    return -1;
+}
+
+int main() {
+    char text[] = "ABBABABCAB";
+    char pattern[] = "ABABC";
+
+    int result = KMP(text, pattern);
+
+    if (result != -1) {
+        printf("匹配成功！起始位置索引为: %d", result);
+               } else {
+        printf("匹配失败。");
+               }
+
+    return 0;
+               }
